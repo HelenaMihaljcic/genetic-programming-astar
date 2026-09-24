@@ -2,7 +2,7 @@ import heapq
 import time
 import math
 from typing import Callable, Tuple, List, Set, Dict
-from core.grid import Grid
+from grid import Grid
 
 
 def heuristic_manhattan(x: int, y: int, gx: int, gy: int, grid: Grid) -> float:
