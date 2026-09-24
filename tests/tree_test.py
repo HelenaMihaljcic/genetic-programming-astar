@@ -1,6 +1,6 @@
 import sys
 from PyQt6.QtWidgets import QApplication
-from tree_viewer import TreeViewer
+from ui.tree_viewer import TreeViewer
 
 
 class Test:

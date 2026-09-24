@@ -1,6 +1,6 @@
 import sys
 from PyQt6.QtWidgets import QApplication
-from charts import FitnessChart
+from ui.charts import FitnessChart
 
 
 app = QApplication(sys.argv)
