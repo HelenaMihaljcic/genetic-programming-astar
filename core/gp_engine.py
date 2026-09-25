@@ -2,9 +2,9 @@ import operator
 from deap import base, creator, tools, gp
 
 
-# =========================
+ 
 # FITNESS AND INDIVIDUAL
-# =========================
+ 
 
 if not hasattr(creator, "FitnessMax"):
     creator.create(
@@ -21,9 +21,9 @@ if not hasattr(creator, "Individual"):
     )
 
 
-# =========================
+ 
 # PRIMITIVE SET
-# =========================
+ 
 
 pset = gp.PrimitiveSet("MAIN", 2)
 
@@ -35,9 +35,9 @@ pset.renameArguments(ARG0="x")
 pset.renameArguments(ARG1="y")
 
 
-# =========================
+ 
 # TOOLBOX
-# =========================
+ 
 
 toolbox = base.Toolbox()
 
@@ -64,9 +64,9 @@ toolbox.register(
 )
 
 
-# =========================
+ 
 # COMPILE
-# =========================
+ 
 
 toolbox.register(
     "compile",
@@ -75,9 +75,9 @@ toolbox.register(
 )
 
 
-# =========================
+ 
 # EVALUATION
-# =========================
+ 
 
 def evaluate(individual):
     func = toolbox.compile(expr=individual)
@@ -95,9 +95,9 @@ toolbox.register(
 )
 
 
-# =========================
+ 
 # SELECTION
-# =========================
+ 
 
 toolbox.register(
     "select",
@@ -106,9 +106,9 @@ toolbox.register(
 )
 
 
-# =========================
+ 
 # CROSSOVER
-# =========================
+ 
 
 toolbox.register(
     "mate",
@@ -116,9 +116,9 @@ toolbox.register(
 )
 
 
-# =========================
+ 
 # MUTATION
-# =========================
+ 
 
 toolbox.register(
     "mutate",
@@ -128,96 +128,137 @@ toolbox.register(
 )
 
 
-# =========================
+ 
 # CREATE POPULATION
-# =========================
+ 
 
 population = toolbox.population(n=10)
 
 
-# =========================
-# EVALUATE POPULATION
-# =========================
+ 
+# INITIAL EVALUATION
+ 
 
 for individual in population:
     individual.fitness.values = toolbox.evaluate(individual)
 
 
-# =========================
-# SELECT INDIVIDUALS
-# =========================
+ 
+# EVOLUTION
+ 
 
-selected = toolbox.select(
+number_of_generations = 10
+
+for generation in range(number_of_generations):
+
+     
+    # SELECTION
+     
+
+    selected = toolbox.select(
+        population,
+        len(population)
+    )
+
+     
+    # CLONE
+     
+
+    offspring = list(
+        map(
+            toolbox.clone,
+            selected
+        )
+    )
+
+     
+    # CROSSOVER
+     
+
+    for child1, child2 in zip(
+        offspring[::2],
+        offspring[1::2]
+    ):
+
+        if len(child1) > 1 and len(child2) > 1:
+
+            toolbox.mate(
+                child1,
+                child2
+            )
+
+            del child1.fitness.values
+            del child2.fitness.values
+
+     
+    # MUTATION
+     
+
+    for mutant in offspring:
+
+        toolbox.mutate(mutant)
+
+        del mutant.fitness.values
+
+     
+    # EVALUATE NEW INDIVIDUALS
+     
+
+    for individual in offspring:
+
+        if not individual.fitness.valid:
+
+            individual.fitness.values = (
+                toolbox.evaluate(individual)
+            )
+
+     
+    # NEW GENERATION
+     
+
+    population = offspring
+
+     
+    # BEST INDIVIDUAL
+     
+
+    best_individual = tools.selBest(
+        population,
+        1
+    )[0]
+
+    print(
+        "Generation:",
+        generation,
+        "| Best:",
+        best_individual,
+        "| Fitness:",
+        best_individual.fitness.values[0]
+    )
+
+
+ 
+# FINAL RESULT
+ 
+
+best_individual = tools.selBest(
     population,
-    len(population)
+    1
+)[0]
+
+print("\nBest individual:")
+print(best_individual)
+
+print(
+    "Fitness:",
+    best_individual.fitness.values[0]
 )
 
-
-# =========================
-# CLONE SELECTED INDIVIDUALS
-# =========================
-
-offspring = list(
-    map(
-        toolbox.clone,
-        selected
-    )
+func = toolbox.compile(
+    expr=best_individual
 )
 
-
-# =========================
-# APPLY CROSSOVER
-# =========================
-
-for child1, child2 in zip(
-    offspring[::2],
-    offspring[1::2]
-):
-    if len(child1) > 1 and len(child2) > 1:
-        toolbox.mate(child1, child2)
-
-        del child1.fitness.values
-        del child2.fitness.values
-
-
-# =========================
-# APPLY MUTATION
-# =========================
-
-for mutant in offspring:
-    toolbox.mutate(mutant)
-
-    del mutant.fitness.values
-
-
-# =========================
-# PRINT RESULTS
-# =========================
-
-print("Original population:")
-
-for individual in population:
-    print(
-        individual,
-        "fitness:",
-        individual.fitness.values[0]
-    )
-
-
-print("\nSelected population:")
-
-for individual in selected:
-    print(
-        individual,
-        "fitness:",
-        individual.fitness.values[0]
-    )
-
-
-print("\nOffspring after crossover and mutation:")
-
-for individual in offspring:
-    print(
-        individual,
-        "fitness: invalid"
-    )
+print(
+    "Result for x=2, y=3:",
+    func(2, 3)
+)
