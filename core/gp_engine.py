@@ -1,5 +1,9 @@
 import operator
+
 from deap import base, creator, tools, gp
+
+from grid import Grid
+from a_star import run_a_star, heuristic_dijkstra
 
 
  
@@ -31,8 +35,8 @@ pset.addPrimitive(operator.add, 2)
 pset.addPrimitive(operator.sub, 2)
 pset.addPrimitive(operator.mul, 2)
 
-pset.renameArguments(ARG0="x")
-pset.renameArguments(ARG1="y")
+pset.renameArguments(ARG0="dx")
+pset.renameArguments(ARG1="dy")
 
 
  
@@ -76,17 +80,63 @@ toolbox.register(
 
 
  
+# GRID
+ 
+
+grid = Grid()
+
+
+ 
+# START AND GOAL
+ 
+
+start = grid.start
+goal = grid.goal
+
+
+ 
+# OPTIMAL PATH
+ 
+
+optimal_path = run_a_star(
+    grid,
+    start,
+    goal,
+    heuristic_dijkstra
+)
+
+optimal_length = len(optimal_path)
+
+
+ 
 # EVALUATION
  
 
 def evaluate(individual):
-    func = toolbox.compile(expr=individual)
 
-    result = func(2, 3)
+    heuristic = toolbox.compile(
+        expr=individual
+    )
 
-    error = abs(result - 10)
+    path, visited = run_a_star(
+        grid,
+        start,
+        goal,
+        heuristic
+    )
 
-    return (-error,)
+    if not path:
+        return (-1000.0,)
+
+    path_length = len(path)
+
+    length_difference = abs(
+        path_length - optimal_length
+    )
+
+    fitness = -length_difference
+
+    return (fitness,)
 
 
 toolbox.register(
@@ -132,7 +182,9 @@ toolbox.register(
 # CREATE POPULATION
  
 
-population = toolbox.population(n=10)
+population = toolbox.population(
+    n=10
+)
 
 
  
@@ -140,7 +192,10 @@ population = toolbox.population(n=10)
  
 
 for individual in population:
-    individual.fitness.values = toolbox.evaluate(individual)
+
+    individual.fitness.values = (
+        toolbox.evaluate(individual)
+    )
 
 
  
@@ -149,7 +204,9 @@ for individual in population:
 
 number_of_generations = 10
 
-for generation in range(number_of_generations):
+for generation in range(
+    number_of_generations
+):
 
      
     # SELECTION
@@ -196,12 +253,14 @@ for generation in range(number_of_generations):
 
     for mutant in offspring:
 
-        toolbox.mutate(mutant)
+        toolbox.mutate(
+            mutant
+        )
 
         del mutant.fitness.values
 
      
-    # EVALUATE NEW INDIVIDUALS
+    # EVALUATION
      
 
     for individual in offspring:
@@ -246,19 +305,15 @@ best_individual = tools.selBest(
     1
 )[0]
 
-print("\nBest individual:")
-print(best_individual)
+print(
+    "\nBest individual:"
+)
+
+print(
+    best_individual
+)
 
 print(
     "Fitness:",
     best_individual.fitness.values[0]
-)
-
-func = toolbox.compile(
-    expr=best_individual
-)
-
-print(
-    "Result for x=2, y=3:",
-    func(2, 3)
 )
