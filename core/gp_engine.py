@@ -2,18 +2,25 @@ import operator
 from deap import base, creator, tools, gp
 
 
-creator.create(
-    "FitnessMax",
-    base.Fitness,
-    weights=(1.0,)
-)
 
-creator.create(
-    "Individual",
-    gp.PrimitiveTree,
-    fitness=creator.FitnessMax
-)
+# FITNESS AND INDIVIDUAL
 
+if not hasattr(creator, "FitnessMax"):
+    creator.create(
+        "FitnessMax",
+        base.Fitness,
+        weights=(1.0,)
+    )
+
+if not hasattr(creator, "Individual"):
+    creator.create(
+        "Individual",
+        gp.PrimitiveTree,
+        fitness=creator.FitnessMax
+    )
+
+
+# PRIMITIVE SET
 
 pset = gp.PrimitiveSet("MAIN", 2)
 
@@ -24,6 +31,8 @@ pset.addPrimitive(operator.mul, 2)
 pset.renameArguments(ARG0="x")
 pset.renameArguments(ARG1="y")
 
+
+# TOOLBOX
 
 toolbox = base.Toolbox()
 
@@ -49,7 +58,85 @@ toolbox.register(
     toolbox.individual
 )
 
+
+# COMPILE
+
+
+toolbox.register(
+    "compile",
+    gp.compile,
+    pset=pset
+)
+
+
+# EVALUATION
+
+def evaluate(individual):
+    func = toolbox.compile(expr=individual)
+
+    result = func(2, 3)
+
+    error = abs(result - 10)
+
+    return (-error,)
+
+
+toolbox.register(
+    "evaluate",
+    evaluate
+)
+
+
+# SELECTION
+
+
+toolbox.register(
+    "select",
+    tools.selTournament,
+    tournsize=3
+)
+
+
+
+# CREATE POPULATION
+
+
 population = toolbox.population(n=10)
 
+
+
+# EVALUATE POPULATION
+
 for individual in population:
-    print(individual)
+    individual.fitness.values = toolbox.evaluate(individual)
+
+
+# SELECT NEXT GENERATION
+
+
+selected = toolbox.select(
+    population,
+    len(population)
+)
+
+
+# PRINT RESULTS
+
+print("Original population:")
+
+for individual in population:
+    print(
+        individual,
+        "fitness:",
+        individual.fitness.values[0]
+    )
+
+
+print("\nSelected population:")
+
+for individual in selected:
+    print(
+        individual,
+        "fitness:",
+        individual.fitness.values[0]
+    )
