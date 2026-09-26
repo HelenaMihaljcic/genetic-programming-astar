@@ -6,11 +6,11 @@ from typing import Any, Tuple
 from PyQt6.QtCore import QThread, pyqtSignal
 
 from deap import base, creator, tools, gp
-from grid import Grid
-from a_star import run_a_star, heuristic_dijkstra
+#from grid import Grid
+#from a_star import run_a_star, heuristic_dijkstra
 
-#from .grid import Grid
-#from .a_star import run_a_star, heuristic_dijkstra
+from core.grid import Grid
+from core.a_star import run_a_star, heuristic_dijkstra
 
 
 def protected_div(left: float, right: float) -> float:
