@@ -1,9 +1,22 @@
 import operator
+import math
+import random
 
 from deap import base, creator, tools, gp
 
 from grid import Grid
-from a_star import run_a_star, heuristic_dijkstra
+from astar import run_a_star, heuristic_dijkstra
+
+
+ 
+# PROTECTED DIVISION
+ 
+
+def protected_div(left, right):
+    if abs(right) < 1e-6:
+        return 1.0
+
+    return left / right
 
 
  
@@ -29,14 +42,21 @@ if not hasattr(creator, "Individual"):
 # PRIMITIVE SET
  
 
-pset = gp.PrimitiveSet("MAIN", 2)
+pset = gp.PrimitiveSet("MAIN", 5)
 
 pset.addPrimitive(operator.add, 2)
 pset.addPrimitive(operator.sub, 2)
 pset.addPrimitive(operator.mul, 2)
+pset.addPrimitive(protected_div, 2)
+
+pset.addPrimitive(min, 2)
+pset.addPrimitive(max, 2)
 
 pset.renameArguments(ARG0="dx")
 pset.renameArguments(ARG1="dy")
+pset.renameArguments(ARG2="d_manhattan")
+pset.renameArguments(ARG3="d_euclidean")
+pset.renameArguments(ARG4="obs_density")
 
 
  
@@ -66,11 +86,6 @@ toolbox.register(
     list,
     toolbox.individual
 )
-
-
- 
-# COMPILE
- 
 
 toolbox.register(
     "compile",
@@ -109,6 +124,40 @@ optimal_length = len(optimal_path)
 
 
  
+# HEURISTIC
+ 
+
+def calculate_heuristic(
+    heuristic,
+    current,
+    goal,
+    grid
+):
+    dx = goal[0] - current[0]
+    dy = goal[1] - current[1]
+
+    d_manhattan = (
+        abs(dx) +
+        abs(dy)
+    )
+
+    d_euclidean = math.sqrt(
+        dx * dx +
+        dy * dy
+    )
+
+    obs_density = 0.0
+
+    return heuristic(
+        dx,
+        dy,
+        d_manhattan,
+        d_euclidean,
+        obs_density
+    )
+
+
+ 
 # EVALUATION
  
 
@@ -118,15 +167,32 @@ def evaluate(individual):
         expr=individual
     )
 
+    def gp_heuristic(current, goal, grid):
+
+        return calculate_heuristic(
+            heuristic,
+            current,
+            goal,
+            grid
+        )
+
     path, visited = run_a_star(
         grid,
         start,
         goal,
-        heuristic
+        gp_heuristic
     )
+
+     
+    # NO PATH
+     
 
     if not path:
         return (-1000.0,)
+
+     
+    # PATH LENGTH
+     
 
     path_length = len(path)
 
@@ -134,7 +200,27 @@ def evaluate(individual):
         path_length - optimal_length
     )
 
-    fitness = -length_difference
+     
+    # VISITED NODES
+     
+
+    visited_count = len(visited)
+
+     
+    # TREE COMPLEXITY
+     
+
+    tree_depth = individual.height
+
+     
+    # FITNESS
+     
+
+    fitness = (
+        -length_difference
+        -0.01 * visited_count
+        -0.01 * tree_depth
+    )
 
     return (fitness,)
 
@@ -179,11 +265,11 @@ toolbox.register(
 
 
  
-# CREATE POPULATION
+# POPULATION
  
 
 population = toolbox.population(
-    n=10
+    n=20
 )
 
 
@@ -202,7 +288,7 @@ for individual in population:
 # EVOLUTION
  
 
-number_of_generations = 10
+number_of_generations = 20
 
 for generation in range(
     number_of_generations
@@ -278,7 +364,7 @@ for generation in range(
     population = offspring
 
      
-    # BEST INDIVIDUAL
+    # BEST
      
 
     best_individual = tools.selBest(
@@ -305,15 +391,16 @@ best_individual = tools.selBest(
     1
 )[0]
 
-print(
-    "\nBest individual:"
-)
-
-print(
-    best_individual
-)
+print()
+print("Best individual:")
+print(best_individual)
 
 print(
     "Fitness:",
     best_individual.fitness.values[0]
+)
+
+print(
+    "Tree depth:",
+    best_individual.height
 )
