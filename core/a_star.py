@@ -21,7 +21,7 @@ def run_a_star(
         grid: Grid,
         start: Tuple[int, int],
         goal: Tuple[int, int],
-        heuristic_fn: Callable[[int, int, int, int, Grid], float] = heuristic_octile
+        heuristic_fn: Callable[[int, int, int, int, Grid], float]
 ) -> Tuple[List[Tuple[int, int]], Set[Tuple[int, int]], float]:
     """
     Returns: (path, visited_nodes, execution_time_ms)
