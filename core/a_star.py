@@ -5,7 +5,7 @@ from typing import Callable, Tuple, List, Set, Dict
 # from grid import Grid
 from core.grid import Grid
 
-def heuristic_manhattan(x: int, y: int, gx: int, gy: int, grid: Grid) -> float:
+def heuristic_manhattan(x: int, y: int, gx: int, gy: int, grid: Grid = None) -> float:
     return float(abs(x - gx) + abs(y - gy))
 
 
@@ -21,7 +21,7 @@ def run_a_star(
         grid: Grid,
         start: Tuple[int, int],
         goal: Tuple[int, int],
-        heuristic_fn: Callable[[int, int, int, int, Grid], float]
+        heuristic_fn: Callable[[int, int, int, int, Grid], float] = heuristic_octile
 ) -> Tuple[List[Tuple[int, int]], Set[Tuple[int, int]], float]:
     """
     Returns: (path, visited_nodes, execution_time_ms)
@@ -29,23 +29,34 @@ def run_a_star(
     start_time = time.perf_counter()
 
     open_set = []
-    heapq.heappush(open_set, (0.0, start))
+    
+    h_start = heuristic_fn(start[0], start[1], goal[0], goal[1], grid)
+    if math.isnan(h_start) or math.isinf(h_start):
+        h_start = 10000.0
+
+    heapq.heappush(open_set, (h_start, start))
 
     came_from: Dict[Tuple[int, int], Tuple[int, int]] = {}
     g_score: Dict[Tuple[int, int], float] = {start: 0.0}
 
     visited: Set[Tuple[int, int]] = set()
 
+    SQRT2 = math.sqrt(2)
+
     while open_set:
-        _, current = heapq.heappop(open_set)
+        f_current, current = heapq.heappop(open_set)
+
+        if current in visited:
+            continue
 
         visited.add(current)
 
         if current == goal:
             path = []
-            while current in came_from:
-                path.append(current)
-                current = came_from[current]
+            curr = current
+            while curr in came_from:
+                path.append(curr)
+                curr = came_from[curr]
             path.append(start)
             path.reverse()
 
@@ -61,16 +72,22 @@ def run_a_star(
             if grid.is_wall(nx, ny):
                 continue
 
-            step_cost = 1.414 if dx != 0 and dy != 0 else 1.0
+            if dx != 0 and dy != 0:
+                if grid.is_wall(x + dx, y) or grid.is_wall(x, y + dy):
+                    continue
+
+            step_cost = SQRT2 if (dx != 0 and dy != 0) else 1.0
             tentative_g = g_score[current] + step_cost
 
             neighbor = (nx, ny)
             if neighbor not in g_score or tentative_g < g_score[neighbor]:
                 came_from[neighbor] = current
                 g_score[neighbor] = tentative_g
+                
                 h_val = heuristic_fn(nx, ny, goal[0], goal[1], grid)
                 if math.isnan(h_val) or math.isinf(h_val):
                     h_val = 10000.0
+                    
                 f_score = tentative_g + h_val
                 heapq.heappush(open_set, (f_score, neighbor))
 

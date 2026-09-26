@@ -1,6 +1,6 @@
 
-from core.grid import Grid
-from core.a_star import (
+from grid import Grid
+from a_star import (
     run_a_star,
     heuristic_manhattan,
     heuristic_euclidean,
