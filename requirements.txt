@@ -3,3 +3,5 @@ PyQt6
 matplotlib
 networkx
 deap
+pytest
+pytest-qt
